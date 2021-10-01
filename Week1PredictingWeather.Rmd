@@ -1,0 +1,30 @@
+---
+title: "Predicting the weather analysis"
+output:
+  html_document:
+    theme: cerulean
+    code_folding: hide
+author: "Cody Overholt"
+date: "9/17/2021"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+```
+
+
+
+```{r cars}
+summary(cars)
+```
+
+## Including Plots
+
+You can also embed plots, for example:
+
+```{r pressure, echo=FALSE}
+plot(pressure)
+```
+
+Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
