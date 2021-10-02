@@ -1,0 +1,129 @@
+---
+title: "Residuals and Squared error"
+author: "Cody Overholt"
+date: "9/23/2021"
+output: 
+  html_document:
+    theme: cerulean
+    code_folding: hide
+---
+
+```{r setup, include=FALSE}
+library(tidyverse)
+library(latex2exp)
+
+#loading in the datasets
+weatherData <- read.csv("C:/Users/Cody/Documents/College/10th semester (fall 2021)/Math 425 (linear Regression)/Statistics-Notebook-master/Statistics-Notebook-master/Analyses/Linear Regression/WeatherData.csv")
+targetData <- read.csv('C:/Users/Cody/Documents/College/10th semester (fall 2021)/Math 425 (linear Regression)/Statistics-Notebook-master/Statistics-Notebook-master/Analyses/Linear Regression/target weather.csv')
+
+aggWeathDat <- weatherData %>% 
+  select(c(year,High)) %>% 
+  group_by(year) %>% 
+  summarise(mean = mean(High))
+
+#joins the datasets
+completeDat <- aggWeathDat %>% 
+  left_join(targetData, by = "year") %>% 
+  filter(year<2021) %>% 
+  filter(high>60)
+
+View(completeDat)
+#preps the regression for prediction
+weatherLM <- lm(high~mean,data=completeDat)
+#base plot
+p<- completeDat %>% 
+  ggplot(aes(x=mean,y=high))+
+  #plots regression line
+  geom_smooth(method='lm', se=FALSE, color = "black")+
+  labs(title="High Temperature Prediction for 9/20", x="Average High Temperature for 9/16 - 9/18", y="High Temperature for 9/20")+
+  theme_bw()+
+  #plots data
+  geom_point()
+predVal <- predict(weatherLM, data.frame(mean=74))
+```
+
+## What Is a Residual?
+
+When doing Linear regression, very rarely will the data neatly fall on a single line. The data sometimes follows a trend that can be calculated and used to predict potential outcomes. Calculating the trend and evaluating its usefulness requires us to find values called “residuals”. In short, residuals are the distance between the average for a given x and the recorded value.
+
+$$
+
+Y_i=\beta_0+\beta_1x_i+\underbrace{\epsilon_i}_{Error\, Term/Residual}
+
+$$
+
+The graphic here shows a model for predicting the weather for September 20th for a year given the average high temperature between September 16th to 18th. Given an average temperature of 74 degrees, the model predicts that the temperature on average will be 72.8 degrees. However, the actual measured temperature on that specific day turned out to be 81 degrees. The difference between the two is the residual error.
+
+```{r}
+p+
+  #plots and annotates residual line
+  geom_segment(x=74,y=72.75,xend=74,yend=81, color="red", size = 1.25)+
+  annotate('text', x=70,y=77,label="Residual~error~(epsilon[i])~8.2", parse=TRUE, size=5)+
+  #Higlights predicted value
+  geom_point(aes(x=74,y=predVal), size = 3)+
+  annotate('text',x=78,y=72,label=TeX("$72.8\\,Predicted\\,Value(\\hat{Y}_i)$"), size=5)+
+  
+  #highlights the point I want
+  geom_point(aes(x=74,y=81), size = 2.5, color='darkgreen')+
+  annotate('text', x=73,y=81,label="Y[i]~81",parse=TRUE,size=5)
+
+```
+
+Now that we know what residuals are, how can we use them, and how are they calculated? When making a regression model, the computer uses calculus to find the equation that minimizes the total sum of squared errors (SSE) that this dataset can have. We won’t go over the exact process for how it does that right now. The important part now is what we can learn from the residuals.
+
+
+
+## Evaluating the Residuals
+
+##### Sum of Squared Error
+
+First is the Sum of Squared Errors or SSE. The SSE measures how much the residuals deviate from the prediction line. The graphic below shows what the Squared Errors would look like on a graph. We can calculate the SSE by summing up the total are in all of the blue boxes. 
+
+```{r}
+p+
+  #adds the residuals for all points
+  geom_rect(aes(xmin=mean,ymin=weatherLM$fitted.values,xmax=mean+weatherLM$residuals,ymax=weatherLM$fitted.values+weatherLM$residuals),fill="steelblue", size = 1.25, alpha=.5)
+
+```
+
+
+What does this tell us about our model? Not much on its own. We can learn more once we are able to compare it to another measurement, the Sum of Squared Regression (SSR).
+
+
+##### Sum of Squared Regression
+
+SSR is the measure of how far the prediction line deviates from the average value for the dataset. The Average for the dataset is represented by a dashed line, and the distance between the regression and the average is represented by the red lines between the average and the prediction line. Notice how the red lines are on the same x value for an observation. By squaring the length of each red line and summing them all together, we find the SSR. 
+
+
+```{r}
+
+p+
+  #adds SSR
+  geom_segment(x=completeDat$mean, xend=completeDat$mean, y=weatherLM$fitted.values, yend=mean(completeDat$high), color='firebrick')+
+  annotate('text',x=83,y=76,label=TeX("$Prediction\\,(\\hat{Y})$"), size=5)+
+  annotate('text',x=65,y=74,label=TeX("$Average\\,Y\\,Value\\,(\\bar{Y})$"), size=5)+
+  geom_hline(yintercept = mean(completeDat$high), linetype='dashed')
+```
+
+
+##### Total Sum of Squares
+
+Lastly, we have the Total Sum of Squares (SSTO). The SSTO is the measure of how much the measured values deviate from the average Y value. We also calculate this by summing the SSE and SSR together. SSTO is used to calculate one of the R squared value for our model.
+
+
+```{r}
+
+p+
+  geom_rect(aes(xmin=mean,ymin=weatherLM$fitted.values,xmax=mean+weatherLM$residuals,ymax=weatherLM$fitted.values+weatherLM$residuals),fill="steelblue", size = 1.25,alpha=.75)+
+  geom_rect(xmin=completeDat$mean, xmax=completeDat$mean+weatherLM$residuals, ymin=weatherLM$fitted.values, ymax=mean(completeDat$high),fill='firebrick', alpha=.5)+
+  annotate('text',x=83,y=76,label=TeX("$Prediction\\,(\\hat{Y})$"), size=5)+
+  annotate('text',x=65,y=74,label=TeX("$Average\\,Y\\,Value\\,(\\bar{Y})$"), size=5)+
+  geom_hline(yintercept = mean(completeDat$high), linetype='dashed')
+```
+
+
+The R squared value is the proportion of variation that can be explained by our regression line. Given that R squared is a proportion, it always exists on a scale between 0 and 1. A value of 1 tells up that our regression is a perfect fit for the data, and 0 means it doesn’t fit in any way. 
+
+
+
+
