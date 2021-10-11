@@ -12,8 +12,10 @@ output:
 library(tidyverse)
 library(pander)
 
-weatherData <- read.csv("C:/Users/Cody/Documents/College/10th semester (fall 2021)/Math 425 (linear Regression)/Statistics-Notebook-master/Statistics-Notebook-master/Analyses/Linear Regression/WeatherData.csv")
-targetData <- read.csv('C:/Users/Cody/Documents/College/10th semester (fall 2021)/Math 425 (linear Regression)/Statistics-Notebook-master/Statistics-Notebook-master/Analyses/Linear Regression/target weather.csv')
+
+
+weatherData <- read.csv("C:/Users/Cody/Documents/College/Math 425/LogisticReggression/Week 1/WeatherData.csv")
+targetData <- read.csv('C:/Users/Cody/Documents/College/Math 425/LogisticReggression/Week 1/target weather.csv')
 
 
 
