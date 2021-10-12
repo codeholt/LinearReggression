@@ -1,0 +1,88 @@
+---
+title: "Sampling Distributions"
+output: 
+  html_document:
+    theme: cerulean
+    code_folding: hide
+---
+
+```{r setup, include=FALSE}
+library(tidyverse)
+library(car)
+n <- 100 #sample size
+Xstart <- 30 #lower-bound for x-axis
+Xstop <- 100 #upper-bound for x-axis
+
+
+beta_0 <- 2 #choice of true y-intercept
+beta_1 <- 3.5 #choice of true slope
+sigma <- 13.8 #choice of st. deviation of error terms
+
+## End of Editable area.
+##-----------------------------------------------
+
+
+# Create X, which will be used in the next R-chunk.
+X <- rep(seq(Xstart,Xstop, length.out=n/2), each=2) 
+
+
+N <- 5000 #number of times to pull a random sample
+storage_b0 <- storage_b1 <- storage_rmse <- rep(NA, N)
+for (i in 1:N){
+  Y <- beta_0 + beta_1*X + rnorm(n, 0, sigma) #Sample Y from true model
+  mylm <- lm(Y ~ X)
+  storage_b0[i] <- coef(mylm)[1]
+  storage_b1[i] <- coef(mylm)[2]
+  storage_rmse[i] <- summary(mylm)$sigma
+}
+
+Ystart <- 0 #min(0,min(Y)) 
+Ystop <- 500 #max(max(Y), 0)
+Yrange <- Ystop - Ystart
+
+#layout(matrix(c(1,1,2,3), 2, 2, byrow = TRUE), widths=c(2,2), heights=c(3,3))
+par(mfrow=c(1,1))
+data = data.frame(X = X, Y = Y)
+View(data)
+
+```
+
+## Sampling Distribution
+
+When evaluating and interpreting a regression mode, it is necessary to understand that the slope and intercepts are estimates of an average. Given that there is some uncertainty in the accuracy of the estimate, We will often calculate what’s known as a Sampling Distribution. A sampling distribution is the distribution of estimated slopes or intercepts that could occur given the estimate is the law. Refer to the graphic below.
+
+
+
+```{r}
+#graph for intercept deviation
+ggplot(data,aes(x=X,y=Y))+
+  stat_function(fun=function(x) beta_0+beta_1*x, size = 2.5, color="green")+
+  stat_function(fun=function(x) beta_0+sigma+beta_1*x, size = 2, color="limegreen", alpha = .75)+
+  stat_function(fun=function(x) beta_0+sigma*2+beta_1*x, size = 1.5, color="darkgreen", alpha = .5)+
+  stat_function(fun=function(x) beta_0+sigma*3+beta_1*x, size = 1, color="forestgreen", alpha = .25)+
+  #for - std error
+  stat_function(fun=function(x) beta_0-sigma+beta_1*x, size = 2, color="limegreen", alpha = .75)+
+  stat_function(fun=function(x) beta_0-sigma*2+beta_1*x, size = 1.5, color="darkgreen", alpha = .5)+
+  stat_function(fun=function(x) beta_0-sigma*3+beta_1*x, size = 1, color="forestgreen", alpha = .25)+
+  # plot the points
+  geom_point(color = "black", alpha = .85)+
+  theme_bw()+
+  geom_smooth(method='lm', alpha=1.0)
+
+```
+
+The graphic shows two distributions. The green lines show the standard deviation of the distribution of the slope of the blue estimate. The gray shaded area around the center blue line is the 95% confidence interval for the slope of the blue line. The Standard deviations for these measurements are often called the standard error. 
+
+
+## P values and Confidence Intervals
+
+The p-value for the slope and the intercept are calculated in much the same way a any p-value for another distribution. It is calculated by taking the difference between the estimate and the null hypothesis in the number of standard errors. 
+
+$$
+t = \frac{b_1 - \overbrace{0}^\text{Null Hypothesis}}{s_{b_1}}
+$$
+
+The p-value in this case is the odds of achieving a given slope or intercept assuming the null hypothesis is true. If we use a 95% confidence interval, we expect 95% of all tested slopes or intercepts to fall within 2 standard errors of the null hypothesis. If the calculated slope and hypothesis falls outside of this 95% range, we would reject the null hypothesis and use the calculated slope and intercept as the null hypothesis.
+
+
+
