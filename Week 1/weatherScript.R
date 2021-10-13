@@ -1,7 +1,7 @@
 library(tidyverse)
 
-weatherData <- read.csv("C:/Users/Cody/Documents/College/10th semester (fall 2021)/Math 425 (linear Regression)/Statistics-Notebook-master/Statistics-Notebook-master/Analyses/Linear Regression/WeatherData.csv")
-targetData <- read.csv('C:/Users/Cody/Documents/College/10th semester (fall 2021)/Math 425 (linear Regression)/Statistics-Notebook-master/Statistics-Notebook-master/Analyses/Linear Regression/target weather.csv')
+weatherData <- read.csv("C:/Users/Cody/Documents/College/Math 425/LogisticReggression/Week 1/WeatherData.csv")
+targetData <- read.csv('C:/Users/Cody/Documents/College/Math 425/LogisticReggression/Week 1/target weather.csv')
 
 #View Datasets
 View(weatherData)
@@ -23,18 +23,23 @@ completeDat <- aggWeathDat %>%
 weatherLM <- lm(high~mean,data=completeDat)
 weatherLM
 
+
 summary(weatherLM)
 
 #graph of the reggression model
 completeDat %>% 
   ggplot(aes(x=mean,y=high))+
   geom_point(alpha =1,color="skyblue", fill = "black")+
-  geom_smooth(method="lm", color="black", size = .5)+
-  geom_point(aes(x=77,y=predVal, size = 1.25), color="firebrick",show.legend=FALSE)+
-  geom_text(x=77,y=85, label="Predicted Temperature for 9/20/2021 \n 77 Degrees", color="black")+
-  geom_segment(x=77,y=predVal+1,xend=77,yend=83)+
-  labs(title="High Temperature Prediction for 9/20", x="Average High Temperature for 9/16 - 9/18", y="High Temperature for 9/20")+
+  geom_smooth(method="lm",se=F, color="black", size = .5)+
+  geom_point(aes(x=77,y=predVal[1], size = 1.25), color="firebrick",show.legend=FALSE)+
+  geom_text(x=77,y=60, label="Predicted Temperature for 9/20/2021 \n 77 Degrees", color="black")+
+  geom_segment(x=77,y=predVal[1]-1,xend=77,yend=63)+
+  geom_segment(aes(x=77,xend=77,y=47.19676,yend=95.67647), 
+               size=4, color='firebrick', alpha=.05)+
+  labs(title="High Temperature Prediction for 9/20", 
+       x="Average High Temperature for 9/16 - 9/18", 
+       y="High Temperature for 9/20")+
   theme_bw()
 
-predVal <- predict(weatherLM, data.frame(mean = 77))
+predVal <- predict(weatherLM, data.frame(mean = 77), interval = 'predict')
 predVal
