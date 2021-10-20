@@ -32,4 +32,5 @@ SSR <- function(){}
 #Calculates the Total Sum of Squares
 SSTO <- function(){}
 
-
+#just plots the regression given an LM and a dataset
+plotRegression <- function(){}
