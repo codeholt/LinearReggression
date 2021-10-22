@@ -32,4 +32,6 @@ SSR <- function(){}
 #Calculates the Total Sum of Squares
 SSTO <- function(){}
 
-
+#calculates the pvalue based on a hypothesis test
+#b1-hypothesis/standard error
+pTest <- funciton(){}
