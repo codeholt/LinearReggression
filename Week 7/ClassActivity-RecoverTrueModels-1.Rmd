@@ -1,0 +1,152 @@
+---
+title: "Recovering a True Model"
+output: 
+  html_document:
+    theme: cerulean
+    code_folding: hide
+---
+
+```{r, message=FALSE, warning=FALSE}
+p1Data <- read.csv("p1Data-1.csv", header=TRUE)
+p2Data <- read.csv("p2Data-1.csv", header=TRUE)
+p3Data <- read.csv("p3Data-1.csv", header=TRUE)
+
+```
+
+```{r}
+#shows patterns between variables
+#Ignore bottom and left
+pairs(p1Data)
+
+
+#shows potential pattern lines
+pairs(p1Data,panel = panel.smooth)
+#colors by X2 variable
+pairs(p1Data,panel = panel.smooth, col=as.factor(p1Data$X2))
+
+#obvious 2 lines model, but looking as if we didnt know
+mylm1 <- lm(Y~X4,data=p1Data)
+summary(mylm1)
+
+#the dot iterates along each column in dataset
+plot(mylm1$residuals~.,p1Data)
+
+#we saw that X2 had a pattern that we hadn't already used
+mylm2 <- lm(Y~X4+X2+X3,data=p1Data)#x3 isnt significant in this case
+summary(mylm2)
+
+mylm2 <- lm(Y~X4+X2+X2:X4,data=p1Data)#x2 isnt significant in this case
+summary(mylm2)
+
+mylm2 <- lm(Y~X4+X2:X4,data=p1Data)#the interaction adds significant change
+summary(mylm2)
+pairs(cbind(Res=mylm2$residuals,
+            fit = mylm2$fitted.values, p1Data),
+      panel=panel.smooth, col=as.factor(p1Data$X2))
+
+```
+## Part 1 - Recovering a True Model (Beginner Level)
+
+We believe the true model to be...
+
+$$
+  Y_i = \underbrace{\beta_0 + \beta_1 X_{4i} + \beta_2 X_{4i} X_{2i}}_\text{The True Model} + \epsilon_i
+$$
+
+And estimate that model by...
+
+$$
+  \hat{Y}_i = ...-0.7065 +2.3958 X_{4i} + 1.7763X_{4i}X_{2i}
+$$
+
+with our estimate of $\sigma$ as 13.11.
+
+```{r}
+
+```
+
+
+## Part 2 - Recovering a True Model (Intermediate Level)
+
+We believe the true model to be...
+
+$$
+  Y_i = \underbrace{...}_\text{The True Model} + \epsilon_i
+$$
+
+And estimate that model by...
+
+$$
+  \hat{Y}_i = ...
+$$
+
+with our estimate of $\sigma$ as ...
+
+```{r}
+pairs(p2Data, panel=panel.smooth)
+
+mylm1 <- lm(Y~X5,data=p2Data)
+summary(mylm1)
+
+plot(mylm1$residuals~.,p2Data)
+
+
+mylm2 <- lm(Y~X5 +I(X5^2) + X3,data=p2Data)
+summary(mylm2)
+
+
+
+
+```
+
+```{r}
+install.packages("plotly")
+library(plotly)
+#Perform the multiple regression
+air_lm <- mylm2 <- lm(Y~X5 +I(X5^2) + X3,data=p2Data)
+
+#Graph Resolution (more important for more complex shapes)
+graph_reso <- 0.5
+
+#Setup Axis
+axis_x <- seq(min(p2Data$X5), max(p2Data$X5), by = graph_reso)
+axis_y <- seq(min(p2Data$X3), max(p2Data$X3), by = graph_reso)
+
+#Sample points
+air_surface <- expand.grid(X5 = axis_x, X3 = axis_y, KEEP.OUT.ATTRS=F)
+air_surface <- air_surface %>% mutate(Z=predict.lm(air_lm, newdata = air_surface))
+air_surface <- acast(air_surface, Month ~ Temp, value.var = "Z") #y ~ x
+
+#Create scatterplot
+plot_ly(airquality, 
+        x = ~X5, 
+        y = ~X3, 
+        z = ~Y,
+        text = rownames(airquality), 
+        type = "scatter3d", 
+        mode = "markers") %>%
+  add_trace(z = air_surface,
+            x = axis_x,
+            y = axis_y,
+            type = "surface")
+```
+
+## Part 3 - Recovering a True Model (Advanced Level)
+
+We believe the true model to be...
+
+$$
+  Y_i = \underbrace{...}_\text{The True Model} + \epsilon_i
+$$
+
+And estimate that model by...
+
+$$
+  \hat{Y}_i = ...
+$$
+
+with our estimate of $\sigma$ as ...
+
+```{r}
+
+```
