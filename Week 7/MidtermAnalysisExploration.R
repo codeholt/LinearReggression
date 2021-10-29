@@ -32,6 +32,11 @@ midata2 <- midata %>%
          Analysis...Car.Selling.Price = as.numeric(Analysis...Car.Selling.Price),
          Theory.Assignment...Residuals..Sums.of.Squares..and.R.Squared = as.numeric(Theory.Assignment...Residuals..Sums.of.Squares..and.R.Squared),
          Theory.Assignment...Sampling.Distributions.Unveiled = as.numeric(Theory.Assignment...Sampling.Distributions.Unveiled))
+#averages the analysis grades into one score
+midata2 <- midata2 %>% 
+  mutate(meanAnalysis = (Analysis...Predicting.the.Weather + Analysis...Car.Selling.Price + 
+                           Theory.Assignment...Residuals..Sums.of.Squares..and.R.Squared + Theory.Assignment...Sampling.Distributions.Unveiled)/4)
+
 head(midata2)
 View(midata2)
 #checks the data types of each column
@@ -58,14 +63,13 @@ ggplot(data=midata2)+
   geom_hline(yintercept = 0)
 
 
-
 #step 1 Get model to predict final exam score
 #for typing out all the varable names because they long
 midata2 %>% 
-  lm(Final.Exam~Math.425.Midterm + AttendedAlmostAlways)
+  lm(Final.Exam~Math.425.Midterm + AttendedAlmostAlways + Assessment.Quizzes.Final.Score + MagicTwoGroups)
 
 #actual LM code
-mylm <- lm(Final.Exam~Math.425.Midterm + AttendedAlmostAlways + Math.425.Midterm:AttendedAlmostAlways, data= midata2)
+mylm <- lm(Final.Exam~Math.425.Midterm +  Math.425.Midterm:AttendedAlmostAlways + MagicTwoGroups, data= midata2)
 summary(mylm)
 
 #things to try
@@ -74,14 +78,20 @@ summary(mylm)
 #Gender: Time in Office
 #Time in Office: Predicting the weather, Assesment Quiz
 #residuals theory: car selling price, skills quiz, 
-#Magic 2 groups: Final Quizs
+#Magic 2 groups: Final Quizes
 
 
 ######Notes
 #simple linear regression has the midterm be significant, but the R^2 is low. using the pairs I can probably do better
 #Attendance and gender look like they may have influence. little interaction though and its linear
-#Gender wasnt significant. niether was almost always attended on its own
+#Gender wasnt significant. neither was almost always attended on its own
 #picking up later. made good progress and a plan
+
+#having midterm alone intercept wasnt significant
+#attended almost always wasnt significant on its own, but interacts and makes midterm and intercept significant. itself significant at .1
+#R^2 of .3984 with lm(Final.Exam~Math.425.Midterm + Math.425.Midterm:Assessment.Quizzes.Final.Score +  Math.425.Midterm:AttendedAlmostAlways, data= midata2)
+#will need to ask what variables we can use and if we know them
+#magic 2 seems to be the lynch pin. what is it, and what would mine be?
 
 #Step 2 calculate prediction intervals for final exam score 100% final or 70% final 30% midterm
 
