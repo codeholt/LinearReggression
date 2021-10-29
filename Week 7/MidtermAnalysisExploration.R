@@ -2,9 +2,12 @@ library(tidyverse)
 library(mosaic)
 library(car)
 
-midata <- read.csv("Math425PastGrades.csv")
+midata <- read.csv("Math425PastGrades.csv", stringsAsFactors = TRUE)
 View(midata)
-
+#magic2groups
+# group 2 is hunch of strong math background
+# group 1 is hunch on weak math background
+# plan to compensate: make predictions from both.
 
 
 #checking varable interaction pairs
@@ -12,6 +15,7 @@ pairs(midata)
 pairs(midata,panel = panel.smooth)
 #didnt work, so Im going to convert the Gender, Attendance, Office Hours, class activities, and skills quiz to 1 or 0
 
+#if I dont put the , stringsAsFactors = TRUE into the read.csv, this is needed for the pairs plot
 midata2 <- midata %>% 
   mutate(Gender = case_when(Gender == "M" ~ 0,
                             Gender == "F" ~ 1),
@@ -58,7 +62,7 @@ ggplot(data=midata2)+
 #put my predicted score on here with interval for final decision
 #TODO make it look nice
 ggplot(data=midata2)+
-  geom_point(aes(x=Math.425.Midterm, y=(.7*Final.Exam + .3*Math.425.Midterm)-Final.Exam))+
+  geom_point(aes(x=Math.425.Midterm, y=(.7*Final.Exam + .3*Math.425.Midterm)-Final.Exam, color=as.factor(MagicTwoGroups)))+
   labs(x="Midterm Score (%)", y="Difference in Exam total if midterm is dropped ((Final+Midterm)-Final)")+
   geom_hline(yintercept = 0)
 
@@ -69,7 +73,7 @@ midata2 %>%
   lm(Final.Exam~Math.425.Midterm + AttendedAlmostAlways + Assessment.Quizzes.Final.Score + MagicTwoGroups)
 
 #actual LM code
-mylm <- lm(Final.Exam~Math.425.Midterm +  Math.425.Midterm:AttendedAlmostAlways + MagicTwoGroups, data= midata2)
+mylm <- lm(Final.Exam~Math.425.Midterm + MagicTwoGroups, data= midata2)
 summary(mylm)
 
 #things to try
@@ -80,6 +84,13 @@ summary(mylm)
 #residuals theory: car selling price, skills quiz, 
 #Magic 2 groups: Final Quizes
 
+
+
+#comparing midterm to final, color groups magic 2
+ggplot(data=midata2,aes(x=Math.425.Midterm, y=Final.Exam, color=as.factor(MagicTwoGroups)))+
+  geom_point()+
+  labs(x="Midterm Score (%)", y="Final")+
+  geom_hline(yintercept = 0)
 
 ######Notes
 #simple linear regression has the midterm be significant, but the R^2 is low. using the pairs I can probably do better
