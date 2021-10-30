@@ -1,0 +1,175 @@
+---
+title: "Midterm Decision"
+author: "Cody Overholt"
+date: "10/30/2021"
+output: 
+  html_document:
+    theme: cerulean
+    code_folding: hide
+---
+
+```{r setup, include=FALSE}
+library(tidyverse)
+library(mosaic)
+library(car)
+library(pander)
+library(DT)
+
+midata <- read.csv("Math425PastGrades.csv", stringsAsFactors = TRUE)
+View(midata)
+
+
+
+#checking varable interaction pairs
+pairs(midata)
+pairs(midata,panel = panel.smooth)
+#didnt work, so Im going to convert the Gender, Attendance, Office Hours, class activities, and skills quiz to 1 or 0
+
+#if I dont put the , stringsAsFactors = TRUE into the read.csv, this is needed for the pairs plot
+midata2 <- midata %>% 
+  mutate(Gender = case_when(Gender == "M" ~ 0,
+                            Gender == "F" ~ 1),
+         #changes attendance to Y=1 and N=0
+         AttendedAlmostAlways = case_when(AttendedAlmostAlways == "Y"~1,
+                                          AttendedAlmostAlways == "N"~0),
+         SpentTimeInOfficeHours = case_when(SpentTimeInOfficeHours == "Y"~1,
+                                            SpentTimeInOfficeHours == "N"~0),
+         ClassActivitiesCompletedPerfectly = case_when(ClassActivitiesCompletedPerfectly == "Y"~1,
+                                                       ClassActivitiesCompletedPerfectly == "N"~0),
+         SkillsQuizzesCompletedPerfectly = case_when(SkillsQuizzesCompletedPerfectly == "Y"~1,
+                                                     SkillsQuizzesCompletedPerfectly == "N"~0),
+         #sections Winter 2020 = 0, Fall 2019 = 1
+         Section = case_when(Section == "Winter 2020"~ 0,
+                             Section == "Fall 2019"~ 1),
+         #Making these columns numeric and changing EX values to NA
+         Analysis...Predicting.the.Weather = as.numeric(Analysis...Predicting.the.Weather),
+         Analysis...Car.Selling.Price = as.numeric(Analysis...Car.Selling.Price),
+         Theory.Assignment...Residuals..Sums.of.Squares..and.R.Squared = as.numeric(Theory.Assignment...Residuals..Sums.of.Squares..and.R.Squared),
+         Theory.Assignment...Sampling.Distributions.Unveiled = as.numeric(Theory.Assignment...Sampling.Distributions.Unveiled))
+#averages the analysis grades into one score
+midata2 <- midata2 %>% 
+  mutate(meanAnalysis = (Analysis...Predicting.the.Weather + Analysis...Car.Selling.Price + 
+                           Theory.Assignment...Residuals..Sums.of.Squares..and.R.Squared + Theory.Assignment...Sampling.Distributions.Unveiled)/4)
+
+head(midata2)
+View(midata2)
+#checks the data types of each column
+str(midata2[,-3])
+
+#dropped the section column
+pairs(midata2[,-3], panel = panel.smooth)
+
+#Columns to maybe disclude from the model
+#Section, time in office hours
+mylm <- lm(Final.Exam~Math.425.Midterm + MagicTwoGroups, data= midata2)
+summary(mylm)
+pred <- predict(mylm, data.frame(Math.425.Midterm = c(64,64), MagicTwoGroups = c(1,2)), interval = 'predict')
+predict(mylm, data.frame(Math.425.Midterm = 64, MagicTwoGroups = 1, interval = 'predict'))
+```
+
+# Background and Decision
+
+The analysis presented here will be used to decide whether keep my midterm as part of the overall exam grade, or to drop it in favor of the Final being the only exam. For this analysis, data was collected from students who had taken the class during the winter 2020 and fall 2019 semesters at BYU-Idaho. It was anonymized to protect the individuals.
+
+## {.tabset .tabset-pills .tabset-fade}
+
+### Hide Data
+
+### Show Data {.tabset}
+
+
+
+#### Original Data
+
+```{r}
+datatable(midata)
+```
+## Decision
+
+The Two main pieces of information I used were the score from their midterm and the Magic Two Groups. The Magic Two Groups are separated based on the Professors hunch given someone’s mathematics background. Given that I can only guess which group I would fall into, I projected the potential for both groups.
+
+
+```{r, WARNING = FALSE}
+ggplot(data=midata2)+
+  scale_color_manual(values = c("steelblue", "firebrick"),
+                     name="MagicTwoGroups")+
+  geom_point(aes(x=Math.425.Midterm, y=(.7*Final.Exam + .3*Math.425.Midterm)-Final.Exam, color=as.factor(MagicTwoGroups)))+
+  #group 1
+  geom_point(aes(x=64, y=(.7*pred[1] + .3*64)-pred[1]), color = "steelblue", size = 4)+
+  geom_segment(aes(x=64, xend=64, y=(.7*pred[3] + .3*64)-pred[3],yend=(.7*pred[5] + .3*64)-pred[5]),size = 4, alpha = .01, color = "steelblue")+
+  #group 2
+  geom_point(aes(x=64, y=(.7*pred[2] + .3*64)-pred[2]), color = "firebrick", size = 4)+
+  geom_segment(aes(x=64, xend=64, y=(.7*pred[4] + .3*64)-pred[4],yend=(.7*pred[6] + .3*64)-pred[6]),size = 4, alpha = .01, color = "firebrick")+
+  labs(x="Midterm Score (%)", y="Difference in Exam total if midterm is dropped ((Final+Midterm)-Final)",title = "Final Exam grade Difference")+
+  geom_hline(yintercept = 0)+
+  theme_bw()+
+  annotate(x=50,y=-5, label="Better to drop midterm", geom="text")+
+  annotate(x=50,y=10, label="Better to keep midterm", geom="text")
+```
+
+The above graph shows the difference between the two options. The equation used was as follows $$\text{Exam Grade With Midterm} – \text{Just Final Exam}$$ Points that fall below the black line had a better exam grade when they dropped the midterm, and points above the line got a better grade by keeping the midterm. The vertical lines show the predicted ranges my final grade could fall in for either group. Given that more than half of each range falls above the black line for both groups, It is better that I keep the midterm as part of my final grade even though I only scored a 64%.
+
+# Technical
+
+
+
+#### Analysis
+
+The analysis models the grade on the final when looking at the midterm and magic two groups. 
+
+$$
+  \underbrace{Y_i}_{\text{grade on final exam}} = {\beta_0} + \beta_1 \underbrace{X_{1i}}_\text{Midterm} + \beta_2 \underbrace{X_{2i}}_\text{Magic 2 Group} +\epsilon_i \quad \text{where} \ \epsilon_i \sim N(0, \sigma^2)
+$$
+
+
+The Hypothesis for this model checks to see if there is a relationship between the midterm grade and the final grade, and if the Magic 2 Group changes anything.
+
+$$
+  H_0 : \beta_0 = 0, \beta_1 = 0, \beta_2 = 0
+$$
+
+$$
+  H_a : \beta_0 \neq 0, \beta_1 \neq 0, \beta_2 \neq 0
+$$
+
+Using a significance level of
+
+$$
+\alpha = 0.05
+$$
+The data shows a fairly strong correlation of .7955 with a positive trend. 
+
+```{r}
+
+ggplot(data=midata2,aes(x=Math.425.Midterm, y=Final.Exam, color=as.factor(MagicTwoGroups)))+
+  geom_point()+
+  scale_color_manual(values = c("steelblue", "firebrick"),
+                     name="MagicTwoGroups")+
+  labs(x="Midterm Score (%)", y="Final")+
+  geom_smooth(method = 'lm')+
+  #magic group 1
+  geom_segment(aes(x=64, xend=64, y=pred[4],yend=pred[6]),size = 4, alpha = .01)+
+  geom_point(aes(x=64, y=pred[1]),size = 3, color = 'black')+
+  #magic group 2
+  geom_segment(aes(x=64, xend=64, y=pred[3],yend=pred[5]),size = 4, alpha = .01, color = "steelblue")+
+  geom_point(aes(x=64, y=pred[2]),size = 3, color = 'black')+
+  theme_bw()+
+  geom_vline(xintercept = 64)
+
+summary(mylm) %>% pander()
+
+
+```
+
+#### Interpretataion
+
+The model shows that people who score better on the midterm tend to score better on the final. Group 2 having the strong math background tend to score higher than those with a weaker math background by an average of 28.71 points. On the flip side, the group with the weaker math background do better when the midterm and the final are both part of the exam score, whereas its sometimes advantageous for the strong math group to drop the midterm.
+
+#### Appropriatness
+
+The model does appear to be appropriate for this analysis. The residuals vs fitted shows some outliers but shows fairly good linearity. The data also appears to be normally distributed, and the residuals don’t show any signs of a pattern.
+
+```{r}
+plot(mylm, which = 1:2)
+plot(mylm$residuals)
+```
