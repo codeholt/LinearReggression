@@ -154,6 +154,6 @@ plot(mylm$residuals)
 
 
 
-
-
+plot(Final.Exam~Math.425.Midterm, data = midata2)
+abline(a=0,b=1)
 
