@@ -1,0 +1,100 @@
+---
+title: "Regression Battleship - Final Guess"
+author: "Cody Overholt"
+output: 
+  html_document:
+    theme: cerulean
+    toc: true
+    toc_float: true
+    code_folding: hide
+---
+
+```{r, include=FALSE}
+library(pander)
+library(tidyverse)
+library(mosaic)
+library(car)
+# Read in the RBdata here:
+rbdata <- read.csv("saunders_Fall21_RBdata.csv", header=TRUE)
+```
+
+## The Model of your Guess
+
+<!-- Enter your guessed model in the math notation below. -->
+
+$$
+  Y_i = \beta_0 + \beta_1X_{10}+ \beta_2 X_{10} X_{4} + \beta_3 X_{10}^2 X_{4} + \beta_4 X_{10}^3 X_{4} + \beta_5 X_{5} + \beta_6 X_{10} X_{5} + \beta_7 X_{10}^2 X_{5} + \beta_8 X_{10}^3 X_{5} + \beta_9 X_{9} + \beta_{10} X_{10} X_{9} + \beta_{11} X_{10}^2 X_{9} +  \epsilon_i
+$$
+
+## The lm(...) of your Guess
+
+<!-- Provide your estimates of each model coefficient along with the Adjusted R-squared of your model:-->
+
+```{r}
+## Input your lm(Y ~ ... ,data=rbdata)
+final.lm <- lm(y~x10+ 
+             #noticed x4
+             x4:x10+I(x10^2):x4+I(x10^3):x4+
+             #x5
+             x5+x5:x10+I(x10^2):x5+I(x10^3):x5+
+             x9+x9:x10+I(x10^2):x9, data=rbdata) #replace the "1" with your model
+```
+
+```{r}
+###################################################################
+#Don't edit this part:
+pander(summary(final.lm)$coefficients)
+```
+
+**Adjusted R-squared**: `r summary(final.lm)$adj.r.squared`
+
+
+## The Plot of your Guess
+
+```{r}
+# Draw a picture of your guess at the model here:
+# Remember, your guess only counts for credit if you plot it.
+palette(c("skyblue","skyblue4","orange","orangered", "firebrick", "firebrick4", "green", "limegreen"))
+b <- final.lm$coefficients
+rbdata %>% 
+  ggplot(aes(shape = interaction(x4,x5,x9),color = interaction(x4,x5,x9))) + 
+  scale_fill_manual(values = palette())+
+  scale_color_manual(values = palette())+
+  geom_point(aes(x=x10,y=y), size = 2)+
+  #geom_point(aes(x=x10,y=mylm$fitted.values))+
+  #x4=0.x5=0.x9=0
+  stat_function(fun=function(x) b[1]+b[2]*x, geom="line", color = palette()[1])+
+  #x4=1.x5=0.x9=0
+  stat_function(fun=function(x) (b[1])+(b[2]+b[5])*x+(b[6])*x^2+(b[7])*x^3,
+                geom="line", color = palette()[2])+
+  #x4=0.x5=1.x9=0
+  stat_function(fun=function(x) (b[1]+b[3])+(b[2]+b[8])*x+ b[9]*x^2+b[10]*x^3,
+                geom="line", color = palette()[3])+
+  #x4=0.x5=1.x9=1
+  stat_function(fun=function(x) (b[1]+b[3]+b[4])+(b[2]+b[8]+b[11])*x + 
+                  (b[9]+b[12])*x^2+b[10]*x^3,
+                geom="line", color = palette()[4])+
+  #x4=0.x5=1.x9=2
+  stat_function(fun=function(x) (b[1]+b[3]+2*b[4])+(b[2]+b[8]+2*b[11])*x+ 
+                  (b[9]+2*b[12])*x^2+b[10]*x^3,
+                geom="line", color = palette()[5])+
+  #x4=0.x5=1.x9=3
+  stat_function(fun=function(x) (b[1]+b[3]+3*b[4])+(b[2]+b[8]+3*b[11])*x + 
+                  (b[9]+3*b[12])*x^2+b[10]*x^3,
+                geom="line", color = palette()[6])+
+  theme_bw()
+
+```
+
+
+
+
+
+
+ 
+
+ 
+
+ 
+
+ 

@@ -88,11 +88,11 @@ For the beginner level competition, there are also five official rules your mode
 
 Start by creating a picture of your true model in Desmos. Snip a screenshot of your completed model. Include a picture of your Desmos graph showing your true model.
 
-<!-- Delete this line
 
-![](NameofYourDesmosPicture.png) 
 
-and delete this line for the image code above to work. --> 
+![](DesmosModel.png) 
+
+
 
 
 ## Code
@@ -101,40 +101,73 @@ Use the R-chunks below to create your simulated sample of data from your true re
 
 
 ```{r}
-set.seed(314) #This ensures the randomness is the "same" everytime if you play the entire R-chunk as one entire piece of code. If you run lines separately, your data might not come out the same every time. You can pick any integer value you want for set.seed. Each choice produces a different sample, so you might want to play around with a few different choices.
+set.seed(61) #This ensures the randomness is the "same" everytime if you play the entire R-chunk as one entire piece of code. If you run lines separately, your data might not come out the same every time. You can pick any integer value you want for set.seed. Each choice produces a different sample, so you might want to play around with a few different choices.
 
 ## To begin, decide on your sample size. (You may have to revise it later to ensure all values in your lm(...) are significant.)
   
- n <- 50
-  
+ n <- 70
+
+ startDomain <- -1
+ endDomain <- 2.5
 ## Then, create 10 X-variables using functions like rnorm(n, mean, sd), rchisq(n, df), rf(n, df1, df2), rt(n, df), rbeta(n, a, b), runif(n, a, b) or sample(c(1,0), n, replace=TRUE)... ## To see what any of these functions do, run codes like hist(rchisq(n, 3)). These functions are simply allowing you to get a random sample of x-values. But the way you choose your x-values can have quite an impact on what the final scatterplot of the data will look like.
 
- x1 <- runif(n,-4,4) #replace this
- x2 <- sample(c(0,1), n, replace=T) #replace this
- x3 <- runif(n,-4,4) #replace this
- x4 <- sample(c(0,1), n, replace=T) #On Off Switch
- x5 <- runif(n,-4,4) #replace this
+ x1 <- runif(n,startDomain,endDomain) #Dummy
+ x2 <- sample(c(0,1), n, replace=T) #Dummy
+ x3 <- sample(c(0,1), n, replace=T) #On Off switch #3
+ x4 <- sample(c(0,1), n, replace=T) #dummy
+ x5 <- sample(c(0,1), n, replace=T) #on off switch #1
  #x6 <- x4+runif(n,-4,4) #NOT LEGAL. x4 actually used in model. no longer 2d drawable
- x6 <- x5+runif(n,-4,4)#LEGAL
- x7 <- runif(n,-4,4) #replace this
- x8 <- runif(n,-4,4)#quantitative x variable
- x9 <- sample(c(0,1), n, replace=T, prob = c(.3,.7))#dummy. makes 0 happen 30% chance, 1 70% chance
- x10 <- runif(n,-4,4) #replace this
+ x6 <- x2+x4+runif(n,startDomain,endDomain)#Dummy
+ x7 <- runif(n,startDomain,endDomain) #Explanitory variable
+ x8 <- runif(n,startDomain,endDomain)#dummy
+ x9 <- sample(c(0,1), n, replace=T)#On Off switch #2
+ x10 <- x4+runif(n,startDomain,endDomain) #dummy
  
+ #sample(c(0,1), n, replace=T, prob = c(.3,.7))
 ## Then, create betas, sigma, normal error terms and y
  
  # *** WRITE IT DOWN BEFORE TYPING IT***
+ #x7
  beta0 <- 4
- beta1 <- 1.2
- beta2 <- -0.3
+ beta1 <- 4
  
- beta3 <- -3
- beta4 <- -4.9
- beta5 <- 0.2
- beta6 <- .3
+ #x5
+ beta2 <- -13
+ #x5:x7
+ beta3 <- -2 # not significant
+ 
+ #x9
+ beta4 <- -5
+ #x9:x7
+ beta5 <- -02 #not significant
+ 
+ #x3
+ beta6 <- 5 #not significant
+ #x3:x7
+ beta7 <- -11
+ 
+ #x5:x9
+ beta8 <- 34
+ #x5:x9:x7
+ beta9 <- -5
+ 
+ #x5:x3
+ beta10 <- 12
+ #x5:x3:x7
+ beta11 <- 7 
+ 
+ #x9:x3
+ beta12 <- 7
+ #x9:x3:x7
+ beta13 <- 14
+ 
+ #x5:x9:x3
+ beta14 <- -17
+ #x5:x9:x3:x7
+ beta15 <- -8 #not significant
  #...
  
- sigma <- 1.72 #change to whatever positive number you want
+ sigma <-3#change to whatever positive number you want
  
 
  ################################
@@ -144,9 +177,20 @@ set.seed(314) #This ensures the randomness is the "same" everytime if you play t
  
  #An example of how to make Y...
  # y <-  beta0 + beta1*X1 + beta2*X2 + beta3*X4*X2 + epsilon_i
- 
- y <- beta0+beta1*x8+beta2*x8+
-   beta3*x4+beta4*x4*x8+beta5*x4*(x8^2)+beta6*x4*x8^3+epsilon_i#...edit this code and replace it with your model. Don't forget the + epsilon_i!
+ #switches (in order) x5,x9,x3
+ y <- beta0+beta1*x7+
+   #single interaction
+   beta2*x5+#beta3*x5*x7+
+   beta4*x9+#beta5*x9*x7+
+   #beta6*x3+
+   beta7*x3*x7+
+   #double Interaction
+   beta8*x5*x9+beta9*x5*x9*x7+
+   beta10*x5*x3+beta11*x5*x3*x7+
+   beta12*x9*x3+beta13*x9*x3*x7+
+   #triple interaction
+   beta14*x5*x9*x3+#beta15*x5*x9*x3*x7+
+   epsilon_i#...edit this code and replace it with your model. Don't forget the + epsilon_i!
  
  
  ## Now, you need to load your x-variables and y-variable 
@@ -164,11 +208,20 @@ set.seed(314) #This ensures the randomness is the "same" everytime if you play t
 
  # This loads your data into a data set:
  rbdata <- data.frame(y, x1, x2, x3, x4, x5, x6, x7, x8, x9, x10)
- view(rbdata)
+ #View(rbdata)
  pairs(rbdata)
  #Now fit your model to make sure it comes out significant:
- mylm <- lm(y ~ x8+I(x8^2)+
-              x4+x4:x8+x4:I(x8^2), data=rbdata) #edit this code to be your true model
+ mylm <- lm(y ~ x7+
+              x5+#x7:x5+
+              x9+#x7:x9+
+              #x3+
+              x7:x3+
+              x5:x9+x7:x5:x9+
+              x5:x3+x7:x5:x3+
+              x9:x3+x7:x9:x3+
+              x5:x9:x3,#+x7:x5:x9:x3,
+            data=rbdata) #edit this code to be your true model
+ 
  summary(mylm) %>% pander()
  #all p-values must be significant
  #the R^2 value must be greater than or equal to 0.30.
@@ -197,14 +250,30 @@ Provide a 2D scatterplot that shows both your *true* model (dashed lines) and *e
 ```{r}
 #for multiple on off switches
 #col = interaction (x4,...)
-plot(y~x8, data=rbdata, col=as.factor(x4))
+b <- coef(mylm)
+palette(c("skyblue","skyblue4","orange","orangered", "firebrick", "firebrick4", "green", "limegreen"))
+plot(y~x7, data=rbdata, pch = 16 , col = interaction(factor(rbdata$x5),factor(rbdata$x9),factor(rbdata$x3)))
 
-b <- mylm$coefficients
+#estimates
+abline(b[1],b[2], col = palette()[1], lty=2)#X5=0,X9=0,X3=0
+abline(b[1]+b[3],b[2], col = palette()[2], lty=2)#X5=1,X9=0,X3=0
+abline(b[1]+b[4],b[2], col = palette()[3], lty=2)#X5=0,X9=1,X3=0
+abline(b[1],b[2]+b[5], col = palette()[5], lty=2)#X5=0,X9=0,X3=1
+abline(b[1]+b[3]+b[4]+b[6],b[2]+b[9], col = palette()[4], lty=2)#X5=1,X9=1,X3=0
+abline(b[1]+b[3]+b[7],b[2]+b[5], col = palette()[6], lty=2)#X5=1,X9=0,X3=1
+abline(b[1]+b[4]+b[8],b[2]+b[5]+b[11], col = palette()[7], lty=2)#X5=0,X9=1,X3=1
+abline(b[1]+b[3]+b[4]+b[6]+b[7]+b[8]+b[12],b[2]+b[5]+b[9]+b[10]+b[11], col = palette()[8], lty=2)#X5=1,X9=1,X3=1
 
-x4 <- 0
-curve(b[1]+b[2]*x8+b[3]+x8^2+b[4]*x4+b[5]*x4*x8+b[6]*x4*x8^2+b[7]*x4*x8^3, add=TRUE,xname="x8", col = palette()[1])
-x4 <- 1
-curve(b[1]+b[2]*x8+b[3]+x8^2+b[4]*x4+b[5]*x4*x8+b[6]*x4*x8^2+b[7]*x4*x8^3, add=TRUE,xname="x8", col = palette()[2])
+#estimates
+abline(beta0,beta1, col = palette()[1], lty=1)#X5=0,X9=0,X3=0
+abline(beta0+beta2,beta1, col = palette()[2], lty=1)#X5=1,X9=0,X3=0
+abline(beta0+beta4,beta1, col = palette()[3], lty=1)#X5=0,X9=1,X3=0
+abline(beta0,beta1+beta7, col = palette()[5], lty=1)#X5=0,X9=0,X3=1
+abline(beta0+beta2+beta4+beta8,beta1+beta9, col = palette()[4], lty=1)#X5=1,X9=1,X3=0
+abline(beta0+beta2+beta10,beta1+beta7, col = palette()[6], lty=1)#X5=1,X9=0,X3=1
+abline(beta0+beta4+beta12,beta1+beta7+beta13, col = palette()[7], lty=1)#X5=0,X9=1,X3=1
+abline(beta0+beta2+beta4+beta8+beta10+beta12+beta14,beta1+beta7+beta9+beta11+beta13, col = palette()[8], lty=1)#X5=1,X9=1,X3=1
+#'''
 
 ```
 
@@ -214,7 +283,10 @@ curve(b[1]+b[2]*x8+b[3]+x8^2+b[4]*x4+b[5]*x4*x8+b[6]*x4*x8^2+b[7]*x4*x8^3, add=T
 Write out your "true" model in mathematical form. Make sure it matches your code. This could be "painful" if you chose a complicated model.
 
 $$
-  \text{EXAMPLE:} \ Y_i = \beta_0 + \beta_1 X_{4i} + \beta_2 X_{2i} + \beta_3 X_{4i} X_{2i} + \epsilon_i
+  \ Y_i = \beta_0 + \beta_1 X_{7i} + \beta_2 X_{5i} + \beta_3 X_{9i} + \beta_4 X_{7i} X_{3i} 
+   + \beta_5 X_{5i} X_{9i}  + \beta_6 X_{5i} X_{9i} X_{7i}  + \beta_7 X_{5i} X_{3i}  + \beta_8 X_{5i} X_{3i} X_{7i}  + 
+   \beta_{9} X_{9i} X_{3i} + \beta_{10} X_{9i} X_{3i} X_{7i} + \beta_{11} X_{5i} X_{9i} X_{3i}
+  + \epsilon_i
 $$
 
 
