@@ -519,7 +519,7 @@ library(tidyverse)</code></pre>
 # graphed it (see below), un-comment the following `write.csv` code,
 # then, PLAY this ENTIRE R-chunk to write your data to a csv.
 
-  write.csv(rbdata, &quot;rbdata.csv&quot;, row.names=FALSE)
+  #write.csv(rbdata, &quot;rbdata.csv&quot;, row.names=FALSE)
 
 # The above code writes the dataset to your &quot;current directory&quot;
 # To see where that is, use: getwd() in your Console.
@@ -569,6 +569,200 @@ abline(beta0+beta2+beta4+beta8+beta10+beta12+beta14,beta1+beta7+beta9+beta11+bet
 <div id="results" class="section level2">
 <h2>Results</h2>
 <p>Once the Regression Battleship competition is completed, you will be given instructions on how to complete this section. The basic idea is to compare the three guesses at your true model (from two peers, and your teacher) to decide who won (i.e., who had the closest guess).</p>
+<pre class="r"><code>set.seed(84) #This ensures the randomness is the &quot;same&quot; everytime if you play the entire R-chunk as one entire piece of code. If you run lines separately, your data might not come out the same every time. You can pick any integer value you want for set.seed. Each choice produces a different sample, so you might want to play around with a few different choices.
+
+## To begin, decide on your sample size. (You may have to revise it later to ensure all values in your lm(...) are significant.)
+  
+ n &lt;- 70
+
+ startDomain &lt;- -1
+ endDomain &lt;- 2.5
+## Then, create 10 X-variables using functions like rnorm(n, mean, sd), rchisq(n, df), rf(n, df1, df2), rt(n, df), rbeta(n, a, b), runif(n, a, b) or sample(c(1,0), n, replace=TRUE)... ## To see what any of these functions do, run codes like hist(rchisq(n, 3)). These functions are simply allowing you to get a random sample of x-values. But the way you choose your x-values can have quite an impact on what the final scatterplot of the data will look like.
+
+ x1 &lt;- runif(n,startDomain,endDomain) #Dummy
+ x2 &lt;- sample(c(0,1), n, replace=T) #Dummy
+ x3 &lt;- sample(c(0,1), n, replace=T) #On Off switch #3
+ x4 &lt;- sample(c(0,1), n, replace=T) #dummy
+ x5 &lt;- sample(c(0,1), n, replace=T) #on off switch #1
+ #x6 &lt;- x4+runif(n,-4,4) #NOT LEGAL. x4 actually used in model. no longer 2d drawable
+ x6 &lt;- x2+x4+runif(n,startDomain,endDomain)#Dummy
+ x7 &lt;- runif(n,startDomain,endDomain) #Explanitory variable
+ x8 &lt;- runif(n,startDomain,endDomain)#dummy
+ x9 &lt;- sample(c(0,1), n, replace=T)#On Off switch #2
+ x10 &lt;- x4+runif(n,startDomain,endDomain) #dummy
+ 
+ #sample(c(0,1), n, replace=T, prob = c(.3,.7))
+## Then, create betas, sigma, normal error terms and y
+ 
+ # *** WRITE IT DOWN BEFORE TYPING IT***
+ #x7
+ beta0 &lt;- 4
+ beta1 &lt;- 4
+ 
+ #x5
+ beta2 &lt;- -13
+ #x5:x7
+ beta3 &lt;- -2 # not significant
+ 
+ #x9
+ beta4 &lt;- -5
+ #x9:x7
+ beta5 &lt;- -02 #not significant
+ 
+ #x3
+ beta6 &lt;- 5 #not significant
+ #x3:x7
+ beta7 &lt;- -11
+ 
+ #x5:x9
+ beta8 &lt;- 34
+ #x5:x9:x7
+ beta9 &lt;- -5
+ 
+ #x5:x3
+ beta10 &lt;- 12
+ #x5:x3:x7
+ beta11 &lt;- 7 
+ 
+ #x9:x3
+ beta12 &lt;- 7
+ #x9:x3:x7
+ beta13 &lt;- 14
+ 
+ #x5:x9:x3
+ beta14 &lt;- -17
+ #x5:x9:x3:x7
+ beta15 &lt;- -8 #not significant
+ #...
+ 
+ sigma &lt;-3#change to whatever positive number you want
+ 
+
+ ################################
+ # You ARE NOT ALLOWED to change this part:
+ epsilon_i &lt;- rnorm(n, 0, sigma)
+ ################################ 
+ 
+ #An example of how to make Y...
+ # y &lt;-  beta0 + beta1*X1 + beta2*X2 + beta3*X4*X2 + epsilon_i
+ #switches (in order) x5,x9,x3
+ y &lt;- beta0+beta1*x7+
+   #single interaction
+   beta2*x5+#beta3*x5*x7+
+   beta4*x9+#beta5*x9*x7+
+   #beta6*x3+
+   beta7*x3*x7+
+   #double Interaction
+   beta8*x5*x9+beta9*x5*x9*x7+
+   beta10*x5*x3+beta11*x5*x3*x7+
+   beta12*x9*x3+beta13*x9*x3*x7+
+   #triple interaction
+   beta14*x5*x9*x3+#beta15*x5*x9*x3*x7+
+   epsilon_i#...edit this code and replace it with your model. Don&#39;t forget the + epsilon_i!</code></pre>
+<pre class="r"><code> # This loads your data into a data set:
+ rbdata2 &lt;- data.frame(y, x1, x2, x3, x4, x5, x6, x7, x8, x9, x10)
+
+mylm &lt;- lm(y ~ x7+
+              x5+#x7:x5+
+              x9+#x7:x9+
+              #x3+
+              x7:x3+
+              x5:x9+x7:x5:x9+
+              x5:x3+x7:x5:x3+
+              x9:x3+x7:x9:x3+
+              x5:x9:x3,#+x7:x5:x9:x3,
+            data=rbdata2)
+ 
+ cody.lm &lt;- lm(y~x9:x5+x5:x6+x6:x5+x3:x9:x7+
+                 x3:x5:x6+x3:x7+x3+x5:x7:x3+
+                 x7:x9:x5:x3+x7+x7:x9, data=rbdata2)
+ 
+ david.lm &lt;- lm(y~ x7 +  x5 + x9:x5+ x3:x7 + x5:x3 + x5:x3:x7+ 
+                  x9:x3:x7 + x9:x5:x3 + x9:x7,data = rbdata2)
+ 
+ saunders.lm &lt;- lm( y ~ x5 + x3 + x7 + x9:x5 + x5:x3 + x9:x7 + 
+                      x5:x7 +  x3:x7 + x9:x5:x3 + x9:x3:x7 + 
+                      x5:x3:x7 + x9:x5:x3:x7, data = rbdata2)
+ 
+ 
+  yhc &lt;- predict(cody.lm, newdata=rbdata2)
+  yhs &lt;- predict(saunders.lm, newdata=rbdata2)
+  yhd &lt;- predict(david.lm, newdata=rbdata2)
+  yhActual &lt;- predict(mylm, newdata=rbdata2)
+  # Compute y-bar
+  ybar &lt;- mean(rbdata2$y) #Yi is given by Ynew from the new sample of data
+  
+  # Compute SSTO
+  SSTO &lt;- sum( (rbdata2$y - ybar)^2 )
+  
+  SSEc &lt;- sum( (rbdata2$y - yhc)^2 )
+  SSEs &lt;- sum( (rbdata2$y - yhs)^2 )
+  SSEd &lt;- sum( (rbdata2$y - yhd)^2 )
+  SSEactual &lt;- sum( (rbdata2$y - yhActual)^2 )
+  
+  rsc &lt;- 1 - SSEc/SSTO
+  rss &lt;- 1 - SSEs/SSTO
+  rsd &lt;- 1 - SSEd/SSTO
+  rsActual &lt;- SSEactual/SSTO
+  
+  n &lt;- length(rbdata2$y) #sample size
+  pc &lt;- length(coef(cody.lm)) #num. parameters in model
+  ps &lt;- length(coef(saunders.lm)) #num. parameters in model
+  pd &lt;- length(coef(david.lm)) #num. parameters in model
+  pActual &lt;- length(coef(mylm))
+  rsca &lt;- 1 - (n-1)/(n-pc)*SSEc/SSTO
+  rssa &lt;- 1 - (n-1)/(n-ps)*SSEs/SSTO
+  rsda &lt;- 1 - (n-1)/(n-pd)*SSEd/SSTO
+  rsAa &lt;- 1 - (n-1)/(n-pActual)*SSEactual/SSTO
+ 
+  
+  my_output_table2 &lt;- data.frame(Model = c(&quot;Actual&quot;,&quot;Cody&quot;, &quot;Saunders&quot;, &quot;David&quot;), `Original R2` = c(summary(mylm)$r.squared,summary(cody.lm)$r.squared, summary(saunders.lm)$r.squared, summary(david.lm)$r.squared), `Orig. Adj. R-squared` = c(summary(mylm)$adj.r.squared,summary(cody.lm)$adj.r.squared, summary(saunders.lm)$adj.r.squared, summary(david.lm)$adj.r.squared), `Validation R-squared` = c(rsActual,rsc, rss, rsd), `Validation Adj. R^2` = c(rsAa,rsca, rssa, rsda))
+  
+  colnames(my_output_table2) &lt;- c(&quot;Model&quot;, &quot;Original $R^2$&quot;, &quot;Original Adj. $R^2$&quot;, &quot;Validation $R^2$&quot;, &quot;Validation Adj. $R^2$&quot;)
+
+  
+knitr::kable(my_output_table2, escape=TRUE, digits=4)</code></pre>
+<table>
+<thead>
+<tr class="header">
+<th align="left">Model</th>
+<th align="right">Original <span class="math inline">\(R^2\)</span></th>
+<th align="right">Original Adj. <span class="math inline">\(R^2\)</span></th>
+<th align="right">Validation <span class="math inline">\(R^2\)</span></th>
+<th align="right">Validation Adj. <span class="math inline">\(R^2\)</span></th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="left">Actual</td>
+<td align="right">0.9511</td>
+<td align="right">0.9419</td>
+<td align="right">0.0489</td>
+<td align="right">0.9419</td>
+</tr>
+<tr class="even">
+<td align="left">Cody</td>
+<td align="right">0.8507</td>
+<td align="right">0.8254</td>
+<td align="right">0.8507</td>
+<td align="right">0.8254</td>
+</tr>
+<tr class="odd">
+<td align="left">Saunders</td>
+<td align="right">0.9421</td>
+<td align="right">0.9299</td>
+<td align="right">0.9421</td>
+<td align="right">0.9299</td>
+</tr>
+<tr class="even">
+<td align="left">David</td>
+<td align="right">0.9362</td>
+<td align="right">0.9266</td>
+<td align="right">0.9362</td>
+<td align="right">0.9266</td>
+</tr>
+</tbody>
+</table>
 </div>
 </div>
 
