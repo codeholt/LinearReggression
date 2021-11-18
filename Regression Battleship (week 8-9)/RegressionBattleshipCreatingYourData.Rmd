@@ -5,6 +5,8 @@ output:
   html_document:
     theme: cerulean
     code_folding: hide
+editor_options: 
+  chunk_output_type: console
 ---
 
 ```{r message=FALSE, warning=FALSE}
@@ -402,23 +404,22 @@ mylm <- lm(y ~ x7+ x5+#x7:x5+
               x5:x3+x7:x5:x3+
               x9:x3+x7:x9:x3+
               x5:x9:x3,#+x7:x5:x9:x3,
-            data=rbdata2)
+            data=rbdata)
  #todo
- cody.lm <- lm(y~x9:x5+x5:x6+x6:x5+x3:x9:x7+
+ cody.lm <- lm(y~x7+x9:x5+x5:x6+x6:x5+x3:x9:x7+
                  x3:x5:x6+x3:x7+x3+x5:x7:x3+
-                 x7:x9:x5:x3+x7+x7:x9, data=rbdata2)
+                 x7:x9:x5:x3+x7:x9, data=rbdata)
+ bc <- coef(cody.lm)
  #todo
  david.lm <- lm(y~ x7 +  x5 + x9:x5+ x3:x7 + x5:x3 + x5:x3:x7+ 
-                  x9:x3:x7 + x9:x5:x3 + x9:x7,data = rbdata2)
+                  x9:x3:x7 + x9:x5:x3 + x9:x7,data = rbdata)
+ bd <- coef(david.lm)
  
- saunders.lm <- lm( y ~ x7 + x5  +  
-                      x3:x7 +x9:x5 + x5:x3 + x9:x7 + 
-                      x5:x7 +   x9:x5:x3 + x9:x3:x7 + 
-                      x5:x3:x7 + x9:x5:x3:x7+ x3, data = rbdata2)
  #backup, do not touch
- saunders.lm <- lm( y ~ x5 + x3 + x7 + x9:x5 + x5:x3 + x9:x7 + 
+ saunders.lm <- lm( y ~ x7+x5 + x3  + x9:x5 + x5:x3 + x9:x7 + 
                       x5:x7 +  x3:x7 + x9:x5:x3 + x9:x3:x7 + 
-                      x5:x3:x7 + x9:x5:x3:x7, data = rbdata2)
+                      x5:x3:x7 + x9:x5:x3:x7, data = rbdata)
+ bs <- coef(saunders.lm)
  
   yhc <- predict(cody.lm, newdata=rbdata2)
   yhs <- predict(saunders.lm, newdata=rbdata2)
@@ -460,6 +461,109 @@ knitr::kable(my_output_table2, escape=TRUE, digits=4)
 
 ```
 
- 
+##### Winner
 
+
+Davids model performed best under the validation data and was closest when graphing the intercepts
+
+```{r}
+#true Model
+plot(y~x7, data=rbdata, pch = 16 , col = interaction(factor(rbdata$x5),factor(rbdata$x9),factor(rbdata$x3)))
+
+title(main = "True Model")
+#estimates
+abline(b[1],b[2], col = palette()[1], lty=1)#X5=0,X9=0,X3=0
+abline(b[1]+b[3],b[2], col = palette()[2], lty=1)#X5=1,X9=0,X3=0
+abline(b[1]+b[4],b[2], col = palette()[3], lty=1)#X5=0,X9=1,X3=0
+abline(b[1],b[2]+b[5], col = palette()[5], lty=1)#X5=0,X9=0,X3=1
+abline(b[1]+b[3]+b[4]+b[6],b[2]+b[9], col = palette()[4], lty=1)#X5=1,X9=1,X3=0
+abline(b[1]+b[3]+b[7],b[2]+b[5], col = palette()[6], lty=1)#X5=1,X9=0,X3=1
+abline(b[1]+b[4]+b[8],b[2]+b[5]+b[11], col = palette()[7], lty=1)#X5=0,X9=1,X3=1
+abline(b[1]+b[3]+b[4]+b[6]+b[7]+b[8]+b[12],b[2]+b[5]+b[9]+b[10]+b[11], col = palette()[8], lty=1)#X5=1,X9=1,X3=1
+
+```
+
+```{r}
+#cody's guess
+
+palette(c("skyblue","skyblue4","orange","orangered", "firebrick", "firebrick4", "green", "limegreen"))
+plot(y~x7, data=rbdata, pch = 16 , col = interaction(x5,x9,x3,x6))
+
+title(main = "Cody's Guess")
+#estimates
+abline(bc[1],bc[2], col = palette()[1], lty=1)#X3=0,X5=0,x6=0,X9=0
+abline(bc[1]+bc[3],bc[2]+b[6], col = palette()[2], lty=1)#X3=1,X5=0,x6=0,X9=0
+abline(bc[1],bc[2]+b[7], col = palette()[3], lty=1)#X3=0,X5=0,x6=0,X9=1
+abline(bc[1]+bc[4],bc[2]+b[7], col = palette()[4], lty=1)#X3=0,X5=1,x6=0,X9=1
+abline(bc[1]+bc[5],bc[2], col = palette()[5], lty=1)#X3=0,X5=1,x6=1,X9=0
+abline(bc[1]+bc[3],bc[2]+b[6]+bc[7]+bc[8], col = palette()[6], lty=1)#X3=1,X5=0,x6=0,X9=1
+abline(bc[1]+bc[3]+bc[5]+bc[9],bc[2]+bc[6]+bc[10], col = palette()[7], lty=1)#X3=1,X5=1,x6=1,X9=0
+abline(bc[1]+bc[3]+bc[9],bc[2]+bc[6]+bc[10]+bc[11], col = palette()[8], lty=1)#X3=1,X5=1,x6=0,X9=1
+
+#rbdata %>% 
+#  ggplot(aes(color = interaction(x5,x9,x3))) + 
+#  scale_fill_manual(values = palette())+
+#  scale_color_manual(values = palette())+
+#  geom_point(aes(x=x10,y=y), size = 2,shape = 1)+
+#  geom_point(aes(x=x10,y=cody.lm$fitted.values),shape = 16)
+
+
+```
+
+
+```{r}
+#David's guess
+
+palette(c("skyblue","skyblue4","orange","orangered", "firebrick", "firebrick4", "green", "limegreen"))
+plot(y~x7, data=rbdata, pch = 16 , col = interaction(x5,x9,x3))
+
+title(main = "David's Guess")
+#estimates
+abline(bd[1],bd[2], col = palette()[1], lty=1)#X5=0,X9=0,X3=0
+abline(bd[1]+bd[3],bd[2], col = palette()[2], lty=1)#X5=1,X9=0,X3=0
+abline(bd[1],bd[2]+bd[7], col = palette()[3], lty=1)#X5=0,X9=1,X3=0
+
+abline(bd[1],bd[2]+bd[5], col = palette()[5], lty=1)#X5=0,X9=0,X3=1
+abline(bd[1]+bd[3]+bd[4],bd[2]+bd[7], col = palette()[4], lty=1)#X5=1,X9=1,X3=0
+abline(bd[1]+bd[3]+bd[6],bd[2]+bd[5]+bd[8], col = palette()[6], lty=1)#X5=1,X9=0,X3=1
+abline(bd[1]+b[8],bd[2]+bd[5]+bd[7]+bd[9], col = palette()[7], lty=1)#X5=0,X9=1,X3=1
+abline(bd[1]+bd[3]+bd[4]+bd[6]+bd[10],bd[2]+bd[5]+bd[7]+bd[9]+bd[8], col = palette()[8], lty=1)#X5=1,X9=1,X3=1
+
+#rbdata %>% 
+#  ggplot(aes(color = interaction(x5,x9,x3))) + 
+#  scale_fill_manual(values = palette())+
+#  scale_color_manual(values = palette())+
+#  geom_point(aes(x=x10,y=y), size = 2,shape = 1)+
+#  geom_point(aes(x=x10,y=cody.lm$fitted.values),shape = 16)
+
+
+```
+
+
+```{r}
+#Saunders's guess
+
+palette(c("skyblue","skyblue4","orange","orangered", "firebrick", "firebrick4", "green", "limegreen"))
+plot(y~x7, data=rbdata, pch = 16 , col = interaction(x5,x9,x3))
+title(main = "Brother Saunders Guess")
+
+#estimates
+abline(bs[1],bs[2], col = palette()[1], lty=1)#X5=0,X9=0,X3=0
+abline(bs[1]+bs[3],bs[2]+bs[8], col = palette()[2], lty=1)#X5=1,X9=0,X3=0
+abline(bs[1],bs[2]+bs[7], col = palette()[3], lty=1)#X5=0,X9=1,X3=0
+abline(bs[1]+bs[4],bs[2]+bs[9], col = palette()[5], lty=1)#X5=0,X9=0,X3=1
+abline(bs[1]+bs[3]+bs[5],bs[2]+bs[8], col = palette()[4], lty=1)#X5=1,X9=1,X3=0
+abline(bs[1]+bs[3]+bs[4]+bs[6],bs[2]+bs[8]+bs[9]+bs[12], col = palette()[6], lty=1)#X5=1,X9=0,X3=1
+abline(bs[1]+b[4],bs[2]+bs[7]+bs[9]+b[11], col = palette()[7], lty=1)#X5=0,X9=1,X3=1
+abline(bs[1]+bs[3]+bs[4]+bs[5]+bs[6]+bs[10],bs[2]+bs[7]+bs[8]+bs[9]+bs[11]+bs[12]+bs[13], col = palette()[8], lty=1)#X5=1,X9=1,X3=1
+
+#rbdata %>% 
+#  ggplot(aes(color = interaction(x5,x9,x3))) + 
+#  scale_fill_manual(values = palette())+
+#  scale_color_manual(values = palette())+
+#  geom_point(aes(x=x10,y=y), size = 2,shape = 1)+
+#  geom_point(aes(x=x10,y=cody.lm$fitted.values),shape = 16)
+
+
+```
  
