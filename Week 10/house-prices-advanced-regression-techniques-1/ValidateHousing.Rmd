@@ -1,0 +1,82 @@
+---
+title: "Housing Prices"
+author: "Cody Overholt"
+date: "11/20/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+library(tidyverse)
+library(mosaic)
+library(car)
+train <- read.csv("train.csv", stringsAsFactors = TRUE)
+
+mytrain1 <- train %>% 
+  mutate(TotalSF = X1stFlrSF + X2ndFlrSF + TotalBsmtSF,
+         #turn them into characters because Tidyverse likes it better that way
+         MSZoning = as.character(MSZoning),
+         MSZoning2 = as.factor(case_when(
+           MSZoning %in% c("RH","RL","RM","RP")~"R", 
+           TRUE~MSZoning)) , 
+         Alley = as.character(Alley),
+         Alley = as.factor(replace_na(Alley, "NoAccess")),
+         #changes them back
+         MSZoning = as.factor(MSZoning),
+         Alley = as.factor(Alley))
+
+#splits the data into train and test sets
+  set.seed(121)
+  keep <- sample(1:nrow(mytrain1), 900)
+  
+  my_train <- mytrain1[keep,]
+  my_test <- mytrain1[-keep,]
+
+
+lm1 <- lm(SalePrice~TotalSF+
+            I(TotalSF^2)+
+            OverallQual+
+            SaleCondition,
+          data=my_train)
+
+#neighbrhood needs some work, causes overfitting
+summary(lm1)
+
+plot(SalePrice~TotalSF, data = my_train)
+
+plot(lm1$residuals~ . , data= my_train)
+```
+
+
+```{r cars}
+  
+  
+  
+
+  yhat <- predict(lm1, newdata=my_test)
+  # Compute y-bar
+  ybar <- mean(my_test$SalePrice) #Yi is given by Ynew from the new sample of data
+  
+  # Compute SSTO
+  SSTO <- sum( (my_test$SalePrice - ybar)^2 )
+  
+
+  SSE <- sum( (my_test$SalePrice - yhat)^2 )
+  
+
+  rsActual <- SSE/SSTO
+  
+  n <- length(my_test$SalePrice) #sample size
+
+  pActual <- length(coef(lm1))
+
+  rsAa <- 1 - (n-1)/(n-pActual)*SSE/SSTO
+  
+  my_output_table2 <- data.frame(Model = c("Actual"), `Original R2` = c(summary(lm1)$r.squared), `Orig. Adj. R-squared` = c(summary(lm1)$adj.r.squared), `Validation R-squared` = c(rsActual), `Validation Adj. R^2` = c(rsAa))
+  
+  colnames(my_output_table2) <- c("Model", "Original $R^2$", "Original Adj. $R^2$", "Validation $R^2$", "Validation Adj. $R^2$")
+  
+  knitr::kable(my_output_table2, escape=TRUE, digits=4)
+```
+
+
+
