@@ -2,15 +2,22 @@
 title: "Housing Prices"
 author: "Cody Overholt"
 date: "11/20/2021"
-output: html_document
+output:  
+  html_document:
+    theme: cerulean
+    code_folding: hide
+editor_options: 
+  chunk_output_type: console
 ---
 
 ```{r setup, include=FALSE}
 library(tidyverse)
 library(mosaic)
 library(car)
+library(pander)
 train <- read.csv("train.csv", stringsAsFactors = TRUE)
 
+#mutate all of the columns
 mytrain1 <- train %>% 
   mutate(TotalSF = X1stFlrSF + X2ndFlrSF + TotalBsmtSF,
          #turn them into characters because Tidyverse likes it better that way
@@ -20,58 +27,125 @@ mytrain1 <- train %>%
            TRUE~MSZoning)) , 
          Alley = as.character(Alley),
          Alley = as.factor(replace_na(Alley, "NoAccess")),
+         #bins the quality number into low medium and high
+         OverallQual = as.character(OverallQual),
+         QualRank = as.factor(case_when(
+                              OverallQual %in% c('1','2','3','4')~"Low",
+                              OverallQual %in% c('5','6','7')~"Med",
+                              OverallQual %in% c('8','9','10')~"High",
+                              TRUE~OverallQual)),
+         #Bins SaleCondition to Normal,Partial, and Other
+         SaleCondition = as.character(SaleCondition),
+         SaleCondition2 = as.factor(case_when(SaleCondition %in% c("AdjLand", "Alloca", "Family")~"Other",
+                                              TRUE~SaleCondition)),
          #changes them back
+         OverallQual = as.numeric(OverallQual),
          MSZoning = as.factor(MSZoning),
          Alley = as.factor(Alley))
 
 #splits the data into train and test sets
   set.seed(121)
-  keep <- sample(1:nrow(mytrain1), 900)
-  
-  my_train <- mytrain1[keep,]
-  my_test <- mytrain1[-keep,]
+keep <- sample(1:nrow(mytrain1), 900)
+
+my_train <- mytrain1[keep,]
+my_test <- mytrain1[-keep,]
 
 
-lm1 <- lm(SalePrice~TotalSF+
-            I(TotalSF^2)+
-            OverallQual+
-            SaleCondition,
-          data=my_train)
+lm1 <- lm(SalePrice~TotalSF
+            +I(TotalSF^2)
+            +I(TotalSF^2):QualRank
+            +SaleCondition2
+          ,data=my_train)
+b <- coef(lm1)
 
 #neighbrhood needs some work, causes overfitting
-summary(lm1)
+summary(lm1) %>% pander()
 
-plot(SalePrice~TotalSF, data = my_train)
 
-plot(lm1$residuals~ . , data= my_train)
 ```
 
+## Background
+
+This analysis was an exploration into housing prices in Ames, Iowa. The data included 79 explanatory variables that all held relevant information on the sale price of houses. The purpose was to showcase my ability to use information and tease out patterns found within the data. 
+
+## Model Summary
+
+
+```{r}
+summary(lm1) %>% pander()
+```
+
+I started by taking the total square footage and plotting it against the sale price. There was a clear upward trend that looked exponential save for two points on the right side of the graph. I followed up with checking the quality of the houses upon sale. The houses were ranked on a scale from 1-10. Individually, the rankings didn’t have a significant impact on the price. I then Binned the ranks into Low (1-4), Medium (5-7), and High (8-10) Quality houses. The groupings here were much more significant in their impact on the price as shown on the graph below. Higher quality houses typically yielded a higher sale price.
+
+```{r}
+
+
+palette(c("skyblue","skyblue4","orange","orangered", "firebrick", "firebrick4", "green", "limegreen"))
+plot(SalePrice~TotalSF, data = mytrain1, col = QualRank, main= "Housing Sale prices")
+curve(b['(Intercept)'] + b["TotalSF"]*x+b["I(TotalSF^2)"]*x^2, add = TRUE, col = palette()[1])
+curve((b['(Intercept)']) + 
+        (b["TotalSF"])*x+
+        (b["I(TotalSF^2)"]+b['I(TotalSF^2):QualRankLow']) *x^2, add = TRUE, col = palette()[2])
+curve((b['(Intercept)']) + 
+        (b["TotalSF"])*x+
+        (b["I(TotalSF^2)"]+b['I(TotalSF^2):QualRankMed']) *x^2, add = TRUE, col = palette()[3])
+legend(x="topleft", legend = c("Low Quality", "Medium Quality", "High Quality"),
+       col = c(2,3,1),
+       lty=1)
+```
+
+Second, I looked at the affects of the type of sale on the price. I noticed that the two outliers on this scale were both partially completed in their construction when evaluated/sold. This only increased the R^2 by .01, but was still significant between most sale type. The only ones that didn’t show any significant impact were property mergers and sales within family. Binning these together into a single “Other” category didn’t change their significance. This is likely due to the fact there were less than 100 observations that fit into this “Other” category.
+
+```{r}
+
+plot(SalePrice~TotalSF, data = mytrain1, col = SaleCondition2, main = "Conditions of Sale")
+curve(b['(Intercept)'] + b["TotalSF"]*x+b["I(TotalSF^2)"]*x^2, add = TRUE, col = palette()[1])
+curve((b['(Intercept)']+b["SaleCondition2Normal"]) + 
+        (b["TotalSF"])*x+
+        (b["I(TotalSF^2)"]) *x^2, add = TRUE, col = palette()[4])
+curve((b['(Intercept)']+b["SaleCondition2Other"]) + 
+        (b["TotalSF"])*x+
+        (b["I(TotalSF^2)"]) *x^2, add = TRUE, col = palette()[5])
+curve((b['(Intercept)']+b["SaleCondition2Partial"]) + 
+        (b["TotalSF"])*x+
+        (b["I(TotalSF^2)"]) *x^2, add = TRUE, col = palette()[6])
+legend(x="topleft", legend = c("Abnormal Sale", "Normal Sale","Other (Not Significant)",  "Partially Constructed"),
+       col = c(1,4,5,6),
+       lty=1)
+
+```
+
+## Conclusion
+
+By this point I had run out of time for further analysis. My end result validated with an Adjusted R^2 of .729. If I had more time to explore, I would continue to look at other variables to include and expand the model to 3 or more dimensions.
 
 ```{r cars}
   
   
   
 
-  yhat <- predict(lm1, newdata=my_test)
-  # Compute y-bar
-  ybar <- mean(my_test$SalePrice) #Yi is given by Ynew from the new sample of data
-  
-  # Compute SSTO
-  SSTO <- sum( (my_test$SalePrice - ybar)^2 )
-  
+  ##### Validation Code
+yhat <- predict(lm1, newdata=my_test)
+# Compute y-bar
+ybar <- mean(my_test$SalePrice) #Yi is given by Ynew from the new sample of data
 
-  SSE <- sum( (my_test$SalePrice - yhat)^2 )
-  
+# Compute SSTO
+SSTO <- sum( (my_test$SalePrice - ybar)^2 )
 
-  rsActual <- SSE/SSTO
-  
-  n <- length(my_test$SalePrice) #sample size
 
-  pActual <- length(coef(lm1))
+SSE <- sum( (my_test$SalePrice - yhat)^2 )
 
-  rsAa <- 1 - (n-1)/(n-pActual)*SSE/SSTO
-  
-  my_output_table2 <- data.frame(Model = c("Actual"), `Original R2` = c(summary(lm1)$r.squared), `Orig. Adj. R-squared` = c(summary(lm1)$adj.r.squared), `Validation R-squared` = c(rsActual), `Validation Adj. R^2` = c(rsAa))
+
+rsActual <- 1-SSE/SSTO
+
+n <- length(my_test$SalePrice) #sample size
+
+pActual <- length(coef(lm1))
+
+rsAa <- 1 - (n-1)/(n-pActual)*SSE/SSTO
+
+my_output_table2 <- data.frame(Model = c("Actual"), `Original R2` = c(summary(lm1)$r.squared), `Orig. Adj. R-squared` = c(summary(lm1)$adj.r.squared), `Validation R-squared` = c(rsActual), `Validation Adj. R^2` = c(rsAa))
+
   
   colnames(my_output_table2) <- c("Model", "Original $R^2$", "Original Adj. $R^2$", "Validation $R^2$", "Validation Adj. $R^2$")
   

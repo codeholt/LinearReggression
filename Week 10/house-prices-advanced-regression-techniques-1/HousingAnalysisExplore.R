@@ -47,17 +47,31 @@ lm1 <- lm(SalePrice~TotalSF
             +I(TotalSF^2):QualRank
             +SaleCondition2
           ,data=my_train)
-summary(lm1)
 b <- coef(lm1)
+summary(lm1)
 
-plot(SalePrice~TotalSF, data = mytrain1, col = QualRank)
-curve(b['(Intercept)'] + b["TotalSF"]*x+b["I(TotalSF^2)"]*x^2, add = TRUE)
+palette(c("skyblue","skyblue4","orange","orangered", "firebrick", "firebrick4", "green", "limegreen"))
+plot(SalePrice~TotalSF, data = mytrain1, col = interaction(QualRank))
+curve(b['(Intercept)'] + b["TotalSF"]*x+b["I(TotalSF^2)"]*x^2, add = TRUE, col = palette()[1])
 curve((b['(Intercept)']) + 
         (b["TotalSF"])*x+
-        (b["I(TotalSF^2)"]+b['I(TotalSF^2):QualRankLow']) *x^2, add = TRUE, col = "red")
+        (b["I(TotalSF^2)"]+b['I(TotalSF^2):QualRankLow']) *x^2, add = TRUE, col = palette()[2])
 curve((b['(Intercept)']) + 
         (b["TotalSF"])*x+
-        (b["I(TotalSF^2)"]+b['I(TotalSF^2):QualRankMed']) *x^2, add = TRUE, col = "green")
+        (b["I(TotalSF^2)"]+b['I(TotalSF^2):QualRankMed']) *x^2, add = TRUE, col = palette()[3])
+
+plot(SalePrice~TotalSF, data = mytrain1, col = SaleCondition2)
+curve(b['(Intercept)'] + b["TotalSF"]*x+b["I(TotalSF^2)"]*x^2, add = TRUE, col = palette()[1])
+curve((b['(Intercept)']+b["SaleCondition2Normal"]) + 
+        (b["TotalSF"])*x+
+        (b["I(TotalSF^2)"]) *x^2, add = TRUE, col = palette()[4])
+curve((b['(Intercept)']+b["SaleCondition2Other"]) + 
+        (b["TotalSF"])*x+
+        (b["I(TotalSF^2)"]) *x^2, add = TRUE, col = palette()[5])
+curve((b['(Intercept)']+b["SaleCondition2Partial"]) + 
+        (b["TotalSF"])*x+
+        (b["I(TotalSF^2)"]) *x^2, add = TRUE, col = palette()[6])
+
 
 
 
