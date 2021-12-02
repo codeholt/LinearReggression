@@ -15,7 +15,8 @@ library(car)
 #predict statement for logistic regression
 #predict(model, new data, type = "response")
 
-#as x increases by 1, the odds increase by e^beta_1
+#For Positive coef: as x increases by 1, the odds increase by e^beta_1
+#For Negative Coef: as x increases by 1, the odds decrease by 1-e^beta_1
 
 
 mylm <- lm(gasbill~month+I(month)^2,data=Utilities)

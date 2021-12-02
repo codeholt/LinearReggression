@@ -10,7 +10,7 @@ m425 <- data %>%
   mutate(Exam70 = as.numeric(Final.Exam>70),
          SampDist = as.numeric(as.character(Theory.Assignment...Sampling.Distributions.Unveiled)))
 
-View(data)
+View(m425)
 pairs(m425, panel = panel.smooth)
 
 #Cannot Compare AIC between y variables
@@ -33,7 +33,7 @@ m425 %>%
               method.args = list(family="binomial"), formula = y~x)+
   facet_wrap(~ MagicTwoGroups)
 
-#checking goodnes of fit
+#checking goodness of fit
 library(ResourceSelection)
 
 bob <- glm(Exam70~Math.425.Midterm, data = m425, family = "binomial") %>% summary()
