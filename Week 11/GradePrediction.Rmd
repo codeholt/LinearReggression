@@ -1,0 +1,191 @@
+---
+title: "Math325FinalGradePredictor"
+author: "Cody Overholt"
+date: "12/4/2021"
+output:  
+  html_document:
+    theme: cerulean
+    code_folding: hide
+---
+
+```{r setup, include=FALSE}
+library(tidyverse)
+library(mosaic)
+library(car)
+library(ResourceSelection)
+library(DT)
+library(pander)
+
+train <- read.csv("Math325Grades_Train-1.csv", stringsAsFactors = TRUE)
+test <- read.csv("Math325Grades_Test-1.csv", stringsAsFactors = TRUE)
+
+#View(test)
+#View(train)
+?train
+
+train1 <- train %>% 
+  mutate(FinalGrade = case_when(FinalGrade == "A" ~ 1, FinalGrade == "Other"~0))
+
+
+
+
+
+#final model
+myglm <- glm(FinalGrade~AnalysisTotal+FinalExam+ClassActivitiesTotal, data = train1, family = "binomial")#AIC = 44.679
+summary(myglm)
+
+hoslem.test(myglm$y, myglm$fitted.values)
+
+
+b <- coef(myglm)
+b
+
+
+##Model Validation
+#splts data into test and train
+set.seed(123)
+n <- nrow(train1)
+keep <- sample(1:n, 80)
+my_train <- train1[keep,]#40 values here
+my_test <- train1[-keep,]# rest go here
+
+#creates model on training and runs prediction
+train.glm <- glm(FinalGrade~AnalysisTotal+FinalExam+ClassActivitiesTotal, data = my_train, family = "binomial")
+myPreds <- predict(train.glm, newdata = my_test, type = "response")
+```
+
+## Background
+
+Math 325 is one of the major statistics classes offered at BYU-Idaho, as well as being some students first introduction to the R programming language. This class poses unique challenges by putting learning mathematical concepts alongside coding challenges. What can new Math 325 students do to maximize their chances of getting an A? The following analysis aims to answer that question.
+
+The data for this exploration comes from the gradebooks of past Math 325 Students. Each final grade is categorized into two groups; those that got an “A” and those who got a different grade labelled as “Other”. All Information was anonymized to protect the individual’s privacy.
+
+```{r}
+
+datatable(train, extensions="Responsive", options=list(lengthMenu=c(3,5,10)))
+
+```
+
+## Odds vs Probability
+
+One important distinction that needs to be made before continuing is the difference between probability and odds. Probability tells you how many times an event will have a desired outcome out of the total number of events that occurred.
+
+$$
+\text{Number of Favorable events (X)} \div \text{Number of Total events (N)}
+$$
+
+The Odds of something happening are shown by telling you how many times an event does happen over the amount of times the event didn’t happen. By taking the log of the odds, it can be displayed as a percent. Using a logistic regression model, we can estimate the odds of an event happening given a set of known factors. 
+
+$$
+\text{Number of Favorable events (X)} \div \text{Number of Total events (X) - Number of Favorable events (N)}
+$$
+
+## Important Factors of Success
+
+The Mathematical Model used for this analysis is as follows:
+$$
+  P(Y_i = 1|\, x_i) = \frac{e^{\beta_0 + \beta_1 x_{i1} + \beta_2 x_{i2} + \beta_3 x_{i3}}}{1+e^{\beta_0 + \beta_1 x_{i1} + \beta_2 x_{i2} + \beta_3 x_{i3}}} \text{ Where } \beta_1 = \text{Avearage Analysis score}, \beta_2 = \text{Final Exam Score}, \beta_3 = \text{Class Activity Score}
+$$
+
+
+
+The formula calculates the Odds of getting an “A” in the class.
+
+$$
+\frac{e^{-67.54 + 1.43 x_{i1} + 0.552 x_{i2} + 4.55 x_{i3}}}{1+e^{-67.54 + 1.43 x_{i1} + 0.552 x_{i2} + 4.55 x_{i3}}}
+$$
+
+When tested, this model was able to calculate the odds of getting an A with 92.5% accuracy assuming the calculated odds of getting an A were above 80%. 
+At base the odds of getting an A in the class if you do no analyses, get a 0 on the final, and don’t do the class activities is effectively zero.
+
+
+#### Class Activities
+
+The most important factor for determining whether or not you get an A is to make sure you are coming to class and doing the class activities. Increasing the final score for class activities by one point increases the odds of getting an A by a whopping 94% for each point increase. Make sure to attend each class and understand what is going on each day.
+
+```{r}
+
+
+train1 %>% 
+  ggplot(aes(x=ClassActivitiesTotal,y=FinalGrade))+
+  geom_point()+
+  geom_smooth(method = "glm", 
+              method.args = list(family="binomial"), formula = y~x)+
+  geom_jitter(height = .01)+
+  theme_bw()
+```
+
+#### Total Analysis Grades
+
+The second most important factor in determining your success in the class is your average grade for your analyses. There are a total of 13 analyses during a semester and you have the opportunity to resubmitted them at any time for more credit. Increasing your average Analysis grade by one point only increases the odds of getting an A by roughly 5%, but it’s a major part of the grade and a strong indicator of getting an A across the semester. 
+
+```{r}
+
+
+#plots the analysis total against final grade
+train1 %>% 
+  ggplot(aes(x=AnalysisTotal,y=FinalGrade))+
+  geom_point()+
+  geom_smooth(method = "glm", 
+              method.args = list(family="binomial"), formula = y~x)+
+  geom_jitter(height = .01)+
+  theme_bw()
+```
+
+
+#### Final Exam Grade
+
+The least significant but still important factor in determining your odds of getting an A is the final exam. Doing well on the final exam is bound to boost your grade, but it relies heavily on you knowing what was taught over the semester. Each point increase on the final only increases the odds of getting an A by 1.7%, but getting 10 points on the final increases your odds by around 17% total, which could make or break your grade.
+
+```{r}
+
+
+train1 %>% 
+  ggplot(aes(color =AnalysisTotal,y=FinalGrade,  x=FinalExam))+
+  geom_smooth(method = "glm", 
+              method.args = list(family="binomial"), formula = y~x, color = "darkgreen")+
+  geom_jitter(height = .01)+
+  theme_bw()
+```
+
+
+
+
+
+
+
+## Conclusion
+
+In order to maximize your odds of getting an A in the class, do these three things:
+Attend Class and participate
+Resubmit every analysis to maximize points on revisions
+Study for the final exam
+
+
+
+## Model Summary
+
+The following describes the technical details of the model used.
+
+```{r}
+#model summary
+summary(myglm) %>% pander()
+```
+
+
+Hypothesis test
+
+```{r}
+
+#hoslen test
+(hoslem.test(myglm$y, myglm$fitted.values)) %>% pander()
+
+```
+
+
+Validated Results
+```{r}
+
+table(myPreds > .8, my_test$FinalGrade) %>% pander()
+```
+
